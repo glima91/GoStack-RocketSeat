@@ -1,0 +1,11 @@
+# cria projeto node.js
+yarn init -y 
+
+# instala bibliotecas
+yarn add express
+yarn add nodemon -D
+yarn add uuidv4
+
+# executa aplicação
+node src/index.js
+yarn nodemon src/index.js
