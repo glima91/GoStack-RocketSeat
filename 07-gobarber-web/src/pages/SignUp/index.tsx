@@ -2,8 +2,13 @@ import React, { useCallback, useRef } from 'react';
 import { FiArrowLeft, FiMail, FiLock, FiUser } from 'react-icons/fi';
 import { Form } from '@unform/web';
 import { FormHandles } from '@unform/core';
+import { Link, useHistory } from 'react-router-dom';
 
-import { Container, Content, Background } from './styles';
+import api from '../../service/api';
+
+import { useToast } from '../../hooks/toast';
+
+import { Container, Content, AnimationContainer, Background } from './styles';
 import * as Yup from 'yup';
 import getValidationErrors from '../../utils/getValidationErrors';
 
@@ -12,10 +17,18 @@ import Input from '../../components/Input';
 
 import logoImg from '../../assets/logo.svg';
 
+interface SignUpFormData {
+  name: string;
+  email: string;
+  password: string;
+}
+
 const SignUp: React.FC = () => {
   const formRef = useRef<FormHandles>(null);
+  const { addToast } = useToast();
+  const history = useHistory();
 
-  const handleSubmit = useCallback(async (data: object) => {
+  const handleSubmit = useCallback(async (data: SignUpFormData) => {
     try {
       formRef.current?.setErrors({});
 
@@ -26,22 +39,42 @@ const SignUp: React.FC = () => {
       });
 
       await schema.validate(data, {abortEarly: false});
+
+      await api.post('/users', data);
+
+      history.push('/');
+
+      addToast({
+        type: 'sucess',
+        title: 'Cadastro realizado!',
+        description: 'Você já pode fazer o seu logon no Gobarber!',
+      });
     } catch (err) {
+      if (err instanceof Yup.ValidationError) {
+        const errors = getValidationErrors(err);
       
-      const errors = getValidationErrors(err);
+        formRef.current?.setErrors(errors);
+
+        return;
+      }
       
-      formRef.current?.setErrors(errors);
+      console.log('dispara toast');
+      // disparar um toast
+      addToast({
+        type: 'error',
+        title: 'Erro no cadastro',
+        description: 'Ocorreu um erro ao fazer o cadastro, tente novamente.'
+      });
       
     }
 
-
-
-  }, []);
+  }, [addToast, history]);
 
   return (
     <Container>
     <Background />
     <Content>
+      <AnimationContainer>
       <img src={logoImg} alt="Gobarber"/>
 
       <Form ref={formRef} onSubmit={handleSubmit}>
@@ -57,9 +90,10 @@ const SignUp: React.FC = () => {
 
       </Form>
 
-      <a href="/">
+      <Link to="/">
         <FiArrowLeft />
-        Voltar para logon</a>
+        Voltar para logon</Link>
+      </AnimationContainer>
     </Content>
   </Container>
   )
